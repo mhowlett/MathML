@@ -38,6 +38,10 @@ namespace MathML
         public static double Cost(double[][] xs, double[] ys, double[] theta)
             => xs.Zip(ys, (x, y) => Cost(x, y, theta)).Sum() / xs.Length;
 
+        public static double Cost(double[][] xs, double[] ys, double[] theta, double lambda)
+            => Cost(xs, ys, theta) 
+                + theta.Sum(t => t*t) * lambda / (2 * xs.Length);
+
         public static double[] ScalarProduct(double[] xs, double y)
             => xs.Select(x => x * y).ToArray();
 
@@ -45,10 +49,30 @@ namespace MathML
             => ScalarProduct(x, (Hypothesis(x, theta) - y));
 
         public static double[] VectorAdd(double[][] xs1)
-            => xs1.Aggregate(new double[xs1[0].Length], (accum, xs) => accum.Zip(xs, (a, x) => a + x).ToArray());
+            => xs1.Aggregate(
+                 new double[xs1[0].Length], 
+                 (accum, xs) => accum.Zip(xs, (a, x) => a + x).ToArray()
+               );
 
         public static double[] Gradient(double[][] xs, double[] ys, double[] theta)
-            => VectorAdd(xs.Zip(ys, (x, y) => Gradient(x, y, theta)).ToArray());
+            => ScalarProduct(
+                 VectorAdd(xs.Zip(ys, (x, y) => Gradient(x, y, theta)).ToArray()), 
+                 1.0 / xs.Length
+               );
+
+        public static double[] Gradient(double[][] xs, double[] ys, double[] theta, double lambda)
+            => ScalarProduct(
+                 VectorAdd(
+                   xs.Zip(
+                     ys, 
+                     (fvs, y) => VectorAdd(
+                                   Gradient(fvs, y, theta), 
+                                   ScalarProduct(theta, lambda)
+                                 )
+                   ).ToArray()
+                 ), 
+                 1.0 / xs.Length
+               );
 
         public static double[] VectorAdd(double[] xs, double[] ys)
             => xs.Zip(ys, (x, y) => x + y).ToArray();
@@ -61,6 +85,27 @@ namespace MathML
             {
                 theta = VectorAdd(theta, ScalarProduct(Gradient(xs, ys, theta), -alpha));
                 var cost = Classifier.Cost(xs, ys, theta);
+                if (cost > prevCost)
+                {
+                    alpha /= 2;
+                    if (alpha < minAlpha)
+                    {
+                        break;
+                    }
+                }
+                prevCost = cost;
+            }
+            return theta;
+        }
+
+        public static double[] Train(double[][] xs, double[] ys, double[] theta, double lambda, double minAlpha, double maxAlpha, ref int iterations)
+        {
+            var alpha = maxAlpha;
+            double prevCost = Classifier.Cost(xs, ys, theta, lambda);
+            while (iterations-- > 0)
+            {
+                theta = VectorAdd(theta, ScalarProduct(Gradient(xs, ys, theta, lambda), -alpha));
+                var cost = Classifier.Cost(xs, ys, theta, lambda);
                 if (cost > prevCost)
                 {
                     alpha /= 2;

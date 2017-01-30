@@ -114,5 +114,38 @@ namespace MathML.Test
             Assert.InRange(ps[2], 0, 0.1);
             Assert.InRange(ps[3], 0.9, 1.0);
         }
+
+        [Fact]
+        public void TrainLambda()
+        {
+            var xs = new double[][]
+            {
+                new double[] { 1, 2 },
+                new double[] { 1, 3 },
+                new double[] { 1, 4 },
+                new double[] { 1, 5 }
+            };
+            var ys = new double[] { 0, 0, 0, 1 };
+            var theta = new double[] { 1, 1 };
+            var lambda = 0.0001;
+
+            var limit = 100000;
+            theta = Classifier.Train(
+                xs, ys,
+                theta,
+                lambda,
+                0.001,
+                0.5,
+                ref limit
+            );
+
+            var ps = xs.Select(x => Classifier.Probability(x, theta)).ToList();
+
+            Assert.InRange(ps[0], 0, 0.1);
+            Assert.InRange(ps[1], 0, 0.1);
+            Assert.InRange(ps[2], 0, 0.1);
+            Assert.InRange(ps[3], 0.9, 1.0);
+        }
+
     }
 }
