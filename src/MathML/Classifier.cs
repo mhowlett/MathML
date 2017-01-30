@@ -40,7 +40,7 @@ namespace MathML
 
         public static double Cost(double[][] xs, double[] ys, double[] theta, double lambda)
             => Cost(xs, ys, theta) 
-                + theta.Sum(t => t*t) * lambda / (2 * xs.Length);
+                + theta.Skip(1).Sum(t => t*t) * lambda / (2 * xs.Length);
 
         public static double[] ScalarProduct(double[] xs, double y)
             => xs.Select(x => x * y).ToArray();
@@ -67,7 +67,7 @@ namespace MathML
                      ys, 
                      (fvs, y) => VectorAdd(
                                    Gradient(fvs, y, theta), 
-                                   ScalarProduct(theta, lambda)
+                                   ScalarProduct(new[] {0.0}.Concat(theta.Skip(1)).ToArray(), lambda)
                                  )
                    ).ToArray()
                  ), 
